@@ -13,20 +13,7 @@ public class FileServer {
             server = new ServerSocket(8888);
             while (true) {
                 socket = server.accept();
-                InputStream is = socket.getInputStream();
-                OutputStream os = socket.getOutputStream();
-                byte[] b = new byte[1024];
-                is.read(b);
-                String fileSuffix = new String(b).split("--")[0];//获取后缀，特殊处理
-                FileOutputStream fos = new FileOutputStream("E:\\" + System.currentTimeMillis() + fileSuffix);
-                int length;
-                while ((length = is.read(b)) != -1) {
-                    fos.write(b, 0, length);
-                }
-                fos.close();
-                os.flush();
-                os.close();
-                is.close();
+                new Thread(new FileRunnable(socket)).start();
             }
         } catch (IOException e) {
             try {
@@ -40,6 +27,36 @@ public class FileServer {
                 e1.printStackTrace();
             }
             e.printStackTrace();
+        }
+    }
+
+    static class FileRunnable implements Runnable {
+        Socket socket;
+
+        FileRunnable(Socket socket) {
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            try {
+                InputStream is = socket.getInputStream();
+                OutputStream os = socket.getOutputStream();
+                byte[] b = new byte[1024];
+                is.read(b);
+                String fileSuffix = new String(b).split("--")[0];//文件后缀
+                FileOutputStream fos = new FileOutputStream("/root/doc/" + System.currentTimeMillis() + fileSuffix);
+                int length;
+                while ((length = is.read(b)) > 0) {
+                    fos.write(b, 0, length);
+                }
+                fos.close();
+                os.flush();
+                os.close();
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
